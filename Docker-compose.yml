@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+
+  app:
+    build: .
+    container_name: server
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    volumes:
+      - .:/usr/src/app
+    working_dir: /usr/src/app
+    command: ["npx", "ts-node", "src/app.ts"]
