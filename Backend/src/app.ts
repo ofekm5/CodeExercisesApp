@@ -1,23 +1,27 @@
-import express, { Application, request, response } from 'express';
+import express, { Application } from 'express';
 import mongoose from 'mongoose';
 import bodyParser from 'body-parser';
+import router from './router';
+import logger from './logger';
+import { createServer } from 'http';
+import initSocket from './socket';
 
 const app: Application = express();
+const server = createServer(app);
+const PORT: number = parseInt(process.env.PORT || '5000', 10);
 
 app.use(bodyParser.json());
 
 mongoose.connect('mongodb://localhost:27017/mydb').then(() => {
-  console.log('Connected to MongoDB');
+  logger.info('Connected to MongoDB');
 }).catch((error) => {
-  console.error('Connection error:', error.message);
+  logger.error('Connection error:', error.message);
 });
 
-app.get('/api/codeblocks', (request, response) => {
-    return response.json({ codeblocks: {'code': 'console.log("Hello, World!")', 'answer': 'Hello, World!'} });
-});
+app.use('/api/users', router);
 
-const PORT: number = parseInt(process.env.PORT || '5000', 10);
+initSocket(server);
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+server.listen(PORT, () => {
+  logger.info(`Server is running on port ${PORT}`);
 });
