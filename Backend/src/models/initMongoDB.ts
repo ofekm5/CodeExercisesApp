@@ -17,7 +17,8 @@ function connectToMongoDB() {
 
 function addInitValues() {
   codeBlock.create({
-    name: 'block1',
+    id: '1',
+    name: 'Sum of two numbers',
     code: `
       // Exercise 1: Write a function that returns the sum of two numbers
       function sum(a, b) {
@@ -32,7 +33,8 @@ function addInitValues() {
   });
 
   codeBlock.create({
-    name: 'block2',
+    id: '2',
+    name: 'Factorial of a number',
     code: `
       // Exercise 2: Write a function that returns the factorial of a number
       function factorial(n) {
@@ -50,7 +52,8 @@ function addInitValues() {
   });
 
   codeBlock.create({
-    name: 'block3',
+    id: '3',
+    name: 'Palindrome',
     code: `
       // Exercise 3: Write a function that checks if a string is a palindrome
       function isPalindrome(str) {
@@ -66,7 +69,8 @@ function addInitValues() {
   });
 
   codeBlock.create({
-    name: 'block4',
+    id: '4',
+    name: 'Find Fibonacci sequence',
     code: `
       // Exercise 4: Write a function that returns the Fibonacci sequence up to n
       function fibonacci(n) {

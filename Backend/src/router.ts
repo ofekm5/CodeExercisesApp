@@ -4,6 +4,7 @@ import codeBlock from './models/codeBlock';
 import logger from './logger';
 
 const router = express.Router();
+let totalBlocks = 4;
 
 router.get('/api/codeblocks', [
   check('page').optional().isInt({ min: 1 }).toInt(),
@@ -12,56 +13,76 @@ router.get('/api/codeblocks', [
 
   const errors = validationResult(request);
   if (!errors.isEmpty()) {
+    logger.error('Validation error:', errors.array());
     return response.status(400).json({ errors: errors.array() });
   }
 
-  const { page = 1, limit = 10 } = request.query;
-
   try {
+    const { page = 1, limit = 10 } = request.query;
     const result = await codeBlock.find()
       .select('name')
       .limit(Number(limit))
       .skip((Number(page) - 1) * Number(limit));
+    logger.info('codeblocks fetched successfully');
 
     return response.json({ codeblocks: result });
   } 
   catch (error) {
-    logger.error('Error fetching data:', error);
+    logger.error('Error fetching codeblocks:', error);
     response.status(500).send('Internal Server Error');
   }
 });
 
 router.post('/api/codeblocks', [
   check('name').notEmpty().withMessage('Name is required').trim().escape(),
+  check('code').notEmpty().withMessage('Code is required').trim(),
+  check('answer').notEmpty().withMessage('Answer is required').trim()
 ], async (request: Request, response: Response) => {
 
   const errors = validationResult(request);
   if (!errors.isEmpty()) {
+    logger.error('Validation error:', errors.array());
     return response.status(400).json({ errors: errors.array() });
   }
 
   try {
-    const newCodeBlock = await codeBlock.create(request.body);
+    const { name, code, answer } = request.body;
+    const id = (totalBlocks + 1).toString();
+    const newCodeBlock = await codeBlock.create({ id, name, code, answer });
+    totalBlocks++;
+    logger.info('Block created successfully  ', newCodeBlock);
     return response.status(201).json({ codeblock: newCodeBlock });
-  } catch (error) {
-    logger.error('Error creating data:', error);
+  } 
+  catch (error) {
+    logger.error('Error creating block:', error);
     response.status(500).send('Internal Server Error');
   }
 });
 
 router.delete('/api/codeblocks/:id', [
-  check('id').isMongoId().withMessage('Invalid ID format')
+  check('id').notEmpty().withMessage('ID is required').trim().escape()
 ], async (request: Request, response: Response) => {
 
   const errors = validationResult(request);
   if (!errors.isEmpty()) {
+    logger.error('Validation error:', errors.array());
     return response.status(400).json({ errors: errors.array() });
   }
 
   try {
-    await codeBlock.findByIdAndDelete(request.params.id);
+    const { id } = request.params;
+    const result = await codeBlock.deleteOne({ id });
+    
+    if (result.deletedCount === 0) {
+      logger.error('CodeBlock not found');
+      return response.status(404).json({ error: 'CodeBlock not found' });
+    }
+
+    totalBlocks--;
+    logger.info(`Block ${id} deleted successfully`);
     return response.status(204).send();
-  } catch (error) {
+  } 
+  catch (error) {
     logger.error('Error deleting data:', error);
     response.status(500).send('Internal Server Error');
   }
