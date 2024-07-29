@@ -20,8 +20,6 @@ async function connectToMongoDB(mongoURI: string) {
 
 async function addInitValues() {
   try {
-    logger.info('Adding initial values to MongoDB');
-
     await CodeBlock.create({
       name: 'Sum of two numbers',
       code: `
@@ -31,12 +29,12 @@ async function addInitValues() {
         }
       `,
       answer: `
+        // Exercise 1: Write a function that returns the sum of two numbers
         function sum(a, b) {
           return a + b;
         }
       `,
     });
-    logger.info('Added block 1');
 
     await CodeBlock.create({
       name: 'Factorial of a number',
@@ -47,6 +45,7 @@ async function addInitValues() {
         }
       `,
       answer: `
+        // Exercise 2: Write a function that returns the factorial of a number
         function factorial(n) {
           if (n === 0) {
             return 1;
@@ -55,7 +54,6 @@ async function addInitValues() {
         }
       `,
     });
-    logger.info('Added block 2');
 
     await CodeBlock.create({
       name: 'Palindrome',
@@ -66,13 +64,13 @@ async function addInitValues() {
         }
       `,
       answer: `
+        // Exercise 3: Write a function that checks if a string is a palindrome
         function isPalindrome(str) {
           const reversed = str.split('').reverse().join('');
           return str === reversed;
         }
       `,
     });
-    logger.info('Added block 3');
 
     await CodeBlock.create({
       name: 'Find Fibonacci sequence',
@@ -83,6 +81,7 @@ async function addInitValues() {
         }
       `,
       answer: `
+        // Exercise 4: Write a function that returns the Fibonacci sequence up to n
         function fibonacci(n) {
           const sequence = [0, 1];
           for (let i = 2; i < n; i++) {
@@ -92,8 +91,6 @@ async function addInitValues() {
         }
       `,
     });
-    logger.info('Added block 4');
-
     logger.info('Initial exercises added to MongoDB');
   } 
   catch (error) {

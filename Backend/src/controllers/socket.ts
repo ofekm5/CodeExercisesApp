@@ -51,26 +51,15 @@ function handleEvent(ws: WebSocket, message: { event: string; data: any }) {
   }
 }
 
-function broadcastIfAnswerIsCorrect(userID: number, code: string, blockName: string) { 
-  codeBlock.findOne({ name: blockName }).then((block) => {
-    if (block && block.answer === code) {
-      broadcastToBlock(blockName, {
-        event: 'correctAnswer',
-        data: { userID: userID }
-      });
-    }
-  });
-}
-
 function handleJoinBlock(ws: WebSocket, blockName: string) {
   const userID = clients.length + 1;
   const client: Client = { ws, userID, blockName };
   
   clients.push(client);
-  logger.info(`User ${userID} joined block ${blockName}`);
 
   codeBlock.findOne({ name: blockName }).then((block) => {
     if (block) {
+      logger.info(`User ${userID} joined block ${blockName}`);
       ws.send(JSON.stringify({
         event: 'joinedBlock',
         data: { code: block.code, userID }
@@ -89,16 +78,32 @@ function handleLeaveBlock(userID: number) {
   handleClientLeave(index);
 }
 
-function handleCodeChange(data: { code: string; userID: number }) {
+async function handleCodeChange(data: { code: string; userID: number }) {
   const client = clients.find(client => client.userID === data.userID);
   if (client) {
     logger.info(`User ${data.userID} changed code in block ${client.blockName}`);
 
-    broadcastToBlock(client.blockName, {
-      event: 'codeChange',
-      data: { code: data.code }
-    });
-    broadcastIfAnswerIsCorrect(data.userID, data.code, client.blockName);
+    try {
+      const block = await codeBlock.findOne({ name: client.blockName }).exec();
+      if (block) {
+        logger.info(`Expected answer: ${block.answer}`);
+        if (block.answer === data.code) {
+          broadcastToBlock(client.blockName, {
+            event: 'correctAnswer',
+            data: { userID: data.userID }
+          });
+        } else {
+          broadcastToBlock(client.blockName, {
+            event: 'codeChange',
+            data: { code: data.code }
+          });
+        }
+      } else {
+        logger.error(`Block not found: ${client.blockName}`);
+      }
+    } catch (error:any) {
+      logger.error(`Error fetching block: ${error.message}`);
+    }
   }
 }
 
