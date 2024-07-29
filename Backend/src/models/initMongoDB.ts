@@ -23,7 +23,6 @@ async function addInitValues() {
     logger.info('Adding initial values to MongoDB');
 
     await CodeBlock.create({
-      id: '1',
       name: 'Sum of two numbers',
       code: `
         // Exercise 1: Write a function that returns the sum of two numbers
@@ -40,7 +39,6 @@ async function addInitValues() {
     logger.info('Added block 1');
 
     await CodeBlock.create({
-      id: '2',
       name: 'Factorial of a number',
       code: `
         // Exercise 2: Write a function that returns the factorial of a number
@@ -60,7 +58,6 @@ async function addInitValues() {
     logger.info('Added block 2');
 
     await CodeBlock.create({
-      id: '3',
       name: 'Palindrome',
       code: `
         // Exercise 3: Write a function that checks if a string is a palindrome
@@ -78,7 +75,6 @@ async function addInitValues() {
     logger.info('Added block 3');
 
     await CodeBlock.create({
-      id: '4',
       name: 'Find Fibonacci sequence',
       code: `
         // Exercise 4: Write a function that returns the Fibonacci sequence up to n
@@ -99,7 +95,8 @@ async function addInitValues() {
     logger.info('Added block 4');
 
     logger.info('Initial exercises added to MongoDB');
-  } catch (error) {
+  } 
+  catch (error) {
     logger.error('Error adding initial values:', error);
     throw error;
   }

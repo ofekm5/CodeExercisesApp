@@ -122,12 +122,12 @@ function handleClientLeave(index: number) {
     const client = clients[index];
     const blockName = client.blockName;
 
-    if(index == 1){
-      clients = clients.filter(client => client.blockName !== blockName); // remove all users from block
+    if(client.userID == 1){
       broadcastToBlock(blockName, {
         event: 'endSession',
         data: {}
       });
+      clients = clients.filter(client => client.blockName !== blockName); // remove all users from block
       logger.info(`All users left block ${blockName}`);
     }
     else{

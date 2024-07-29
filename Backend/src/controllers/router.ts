@@ -2,9 +2,9 @@ import express, { Request, Response } from 'express';
 import { check, validationResult } from 'express-validator';
 import codeBlock from '../models/codeBlock';
 import logger from '../logger';
+import mongoose from 'mongoose';
 
 const router = express.Router();
-let totalBlocks = 4;
 
 router.get('/codeblocks', [
   check('page').optional().isInt({ min: 1 }).toInt(),
@@ -47,9 +47,7 @@ router.post('/codeblocks', [
 
   try {
     const { name, code, answer } = request.body;
-    const id = (totalBlocks + 1).toString();
-    const newCodeBlock = await codeBlock.create({ id, name, code, answer });
-    totalBlocks++;
+    const newCodeBlock = await codeBlock.create({ name, code, answer });
     logger.info('Block created successfully  ', newCodeBlock);
     return response.status(201).json({ codeblock: newCodeBlock });
   } 
@@ -59,7 +57,7 @@ router.post('/codeblocks', [
   }
 });
 
-router.delete('/codeblocks/:id', [
+router.delete('/codeblocks', [
   check('id').notEmpty().withMessage('ID is required').trim().escape()
 ], async (request: Request, response: Response) => {
 
@@ -70,15 +68,18 @@ router.delete('/codeblocks/:id', [
   }
 
   try {
-    const { id } = request.params;
-    const result = await codeBlock.deleteOne({ id });
+    const { id } = request.query;
+    if (!mongoose.Types.ObjectId.isValid(id as string)) {
+      logger.error('Invalid ID format');
+      return response.status(400).json({ error: 'Invalid ID format' });
+    }
+    
+    const result = await codeBlock.deleteOne({ _id: new mongoose.Types.ObjectId(id as string) });
     
     if (result.deletedCount === 0) {
       logger.error('CodeBlock not found');
       return response.status(404).json({ error: 'CodeBlock not found' });
     }
-
-    totalBlocks--;
     logger.info(`Block ${id} deleted successfully`);
     return response.status(204).send();
   } 
