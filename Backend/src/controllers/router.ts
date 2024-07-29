@@ -1,12 +1,12 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import { check, validationResult } from 'express-validator';
-import codeBlock from './models/codeBlock';
-import logger from './logger';
+import codeBlock from '../models/codeBlock';
+import logger from '../logger';
 
 const router = express.Router();
 let totalBlocks = 4;
 
-router.get('/api/codeblocks', [
+router.get('/codeblocks', [
   check('page').optional().isInt({ min: 1 }).toInt(),
   check('limit').optional().isInt({ min: 1 }).toInt()
 ], async (request: Request, response: Response) => {
@@ -33,7 +33,7 @@ router.get('/api/codeblocks', [
   }
 });
 
-router.post('/api/codeblocks', [
+router.post('/codeblocks', [
   check('name').notEmpty().withMessage('Name is required').trim().escape(),
   check('code').notEmpty().withMessage('Code is required').trim(),
   check('answer').notEmpty().withMessage('Answer is required').trim()
@@ -59,7 +59,7 @@ router.post('/api/codeblocks', [
   }
 });
 
-router.delete('/api/codeblocks/:id', [
+router.delete('/codeblocks/:id', [
   check('id').notEmpty().withMessage('ID is required').trim().escape()
 ], async (request: Request, response: Response) => {
 

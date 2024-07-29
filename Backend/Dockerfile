@@ -1,11 +1,15 @@
-FROM node:14
+FROM node:16
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
 COPY package*.json ./
+
 RUN npm install
 
 COPY . .
 
+RUN npm run build
+
 EXPOSE 5000
-CMD ["npx", "ts-node", "src/app.ts"]
+
+CMD ["npm", "run", "start"]

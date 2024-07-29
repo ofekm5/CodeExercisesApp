@@ -1,7 +1,7 @@
 import { Server as HttpServer } from 'http';
 import { Server as WebSocketServer, WebSocket } from 'ws';
-import logger from './logger';
-import codeBlock from './models/codeBlock';
+import logger from '../logger';
+import codeBlock from '../models/codeBlock';
 
 interface Client {
   ws: WebSocket;
