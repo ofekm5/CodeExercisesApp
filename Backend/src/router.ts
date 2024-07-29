@@ -24,7 +24,8 @@ router.get('/api/codeblocks', [
       .skip((Number(page) - 1) * Number(limit));
 
     return response.json({ codeblocks: result });
-  } catch (error) {
+  } 
+  catch (error) {
     logger.error('Error fetching data:', error);
     response.status(500).send('Internal Server Error');
   }

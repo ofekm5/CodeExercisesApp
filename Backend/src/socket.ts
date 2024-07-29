@@ -9,8 +9,7 @@ interface Client {
   blockName: string;
 }
 
-const clients: Client[] = [];
-let freeUserID: number = 1;
+let clients: Client[] = [];
 
 export default function initSocket(server: HttpServer) {
   const wss = new WebSocketServer({ server });
@@ -23,7 +22,7 @@ export default function initSocket(server: HttpServer) {
         const parsedMessage = JSON.parse(message.toString());
         handleEvent(ws, parsedMessage);
       } 
-      catch (error:any) {
+      catch (error: any) {
         logger.error('Error parsing message:', error.message);
       }
     });
@@ -52,45 +51,42 @@ function handleEvent(ws: WebSocket, message: { event: string; data: any }) {
   }
 }
 
-function checkIfAnswerIsCorrect(userID:number, code: string, blockName: string) { // broadcast to all clients if answer is correct
-    codeBlock.findOne({ name: blockName }).then((block) => {
-        if (block && block.answer === code) {
-            broadcastToBlock(blockName, {
-                event: 'correctAnswer',
-                data: { userID: userID }
-            });
-        }
-    });
+function broadcastIfAnswerIsCorrect(userID: number, code: string, blockName: string) { 
+  codeBlock.findOne({ name: blockName }).then((block) => {
+    if (block && block.answer === code) {
+      broadcastToBlock(blockName, {
+        event: 'correctAnswer',
+        data: { userID: userID }
+      });
+    }
+  });
 }
 
 function handleJoinBlock(ws: WebSocket, blockName: string) {
-    const userID = freeUserID;
-    const client: Client = { ws, userID, blockName };
-    
-    clients.push(client);
-    logger.info(`User ${userID} joined block ${blockName}`);
-
-    freeUserID++;
+  const userID = clients.length + 1;
+  const client: Client = { ws, userID, blockName };
   
-    codeBlock.findOne({ name: blockName }).then((block) => {
-        if (block) {
-            ws.send(JSON.stringify({
-                event: 'joinedBlock',
-                data: { code: block.code, userID }
-            }));
-        }
-        else {
-            ws.send(JSON.stringify({
-            event: 'error',
-            data: { message: 'Block not found' }
-            }));
-        }
-    });
+  clients.push(client);
+  logger.info(`User ${userID} joined block ${blockName}`);
+
+  codeBlock.findOne({ name: blockName }).then((block) => {
+    if (block) {
+      ws.send(JSON.stringify({
+        event: 'joinedBlock',
+        data: { code: block.code, userID }
+      }));
+    } else {
+      ws.send(JSON.stringify({
+        event: 'error',
+        data: { message: 'Block not found' }
+      }));
+    }
+  });
 }
 
 function handleLeaveBlock(userID: number) {
   const index = clients.findIndex(client => client.userID === userID);
-  handeClientLeave(index);
+  handleClientLeave(index);
 }
 
 function handleCodeChange(data: { code: string; userID: number }) {
@@ -102,7 +98,7 @@ function handleCodeChange(data: { code: string; userID: number }) {
       event: 'codeChange',
       data: { code: data.code }
     });
-    checkIfAnswerIsCorrect(data.userID, data.code, client.blockName);
+    broadcastIfAnswerIsCorrect(data.userID, data.code, client.blockName);
   }
 }
 
@@ -118,21 +114,25 @@ function broadcastToBlock(blockName: string, message: { event: string; data: any
 
 function handleClientDisconnect(ws: WebSocket) {
   const index = clients.findIndex(client => client.ws === ws);
-  handeClientLeave(index);
+  handleClientLeave(index);
 }
 
-function handeClientLeave(index: Number){
-    if (index !== -1) {
-        if(userID == 1){
-            broadcastToBlock(client.blockName, {
-                event: 'endSession'
-            });
-            //clear clients
-        }
-        else{
-            const client = clients[index];
-            clients.splice(index, 1);
-            logger.info(`User ${userID} left block ${client.blockName}`);
-        }
-      }
+function handleClientLeave(index: number) {
+  if (index !== -1) {
+    const client = clients[index];
+    const blockName = client.blockName;
+
+    if(index == 1){
+      clients = clients.filter(client => client.blockName !== blockName); // remove all users from block
+      broadcastToBlock(blockName, {
+        event: 'endSession',
+        data: {}
+      });
+      logger.info(`All users left block ${blockName}`);
+    }
+    else{
+      clients.splice(index, 1);
+      logger.info(`User ${client.userID} left block ${blockName}`);
+    }
+  }
 }
