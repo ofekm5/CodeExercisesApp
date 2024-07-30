@@ -7,15 +7,13 @@ import initSocket from './controllers/socket';
 import initMongoDB from './models/initMongoDB';
 import cors from 'cors';
 
-
 const app: Application = express();
 const server = createServer(app);
 const PORT: number = parseInt(process.env.PORT || '5000', 10);
-const FRONT_URL: string = process.env.PORT || 'http://localhost:3000';
 const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/mydb';
 
 app.use(cors({
-  origin: FRONT_URL, 
+  origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type'],
   credentials: true,
