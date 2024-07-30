@@ -17,7 +17,7 @@ const CodeBlock: React.FC = () => {
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const socket = new WebSocket('ws://localhost:5000');
+    const socket = new WebSocket(`${process.env.REACT_APP_BACKEND_URL}/ws`);
     socketRef.current = socket;
 
     socket.onopen = () => {
