@@ -19,6 +19,7 @@
 - **Frontend**: Next.js, React, TypeScript, MUI (Material-UI)
 - **Backend**: Express.js, MongoDB, WebSocket (ws)
 - **Editor**: Monaco Editor
+- **Deploy**: Railway.app
 
 ## Prerequisites
 
@@ -26,6 +27,8 @@
 - Docker
 
 ## Usage
+
+https://amiable-expression-production.up.railway.app/
 
 ### Lobby Page
 

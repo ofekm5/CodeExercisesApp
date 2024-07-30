@@ -35,6 +35,8 @@ export default function initSocket(server: HttpServer) {
 }
 
 function handleEvent(ws: WebSocket, message: { event: string; data: any }) {
+  logger.info(`Handling event: ${message.event} with data: ${JSON.stringify(message.data)}`);
+  
   switch (message.event) {
     case 'joinBlock':
       handleJoinBlock(ws, message.data);
@@ -52,8 +54,7 @@ function handleEvent(ws: WebSocket, message: { event: string; data: any }) {
 }
 
 function handleJoinBlock(ws: WebSocket, blockName: string) {
-  const blockClients = clients.filter(client => client.blockName === blockName);
-  const userID = blockClients.length + 1;
+  const userID = clients.length + 1;
   const client: Client = { ws, userID, blockName };
 
   clients.push(client);
@@ -69,8 +70,8 @@ function handleJoinBlock(ws: WebSocket, blockName: string) {
       }));
 
       // Notify all other users in the block
-      blockClients.forEach(c => {
-        if (c.userID !== userID) {
+      clients.forEach(c => {
+        if (c.blockName === blockName && c.userID !== userID) {
           c.ws.send(JSON.stringify({
             event: 'anotherUserJoined'
           }));
@@ -91,8 +92,8 @@ function handleJoinBlock(ws: WebSocket, blockName: string) {
   });
 }
 
-
 function handleLeaveBlock(userID: number) {
+  logger.info(`Handling leave block for user ${userID}`);
   const index = clients.findIndex(client => client.userID === userID);
   handleClientLeave(index);
 }
@@ -106,13 +107,17 @@ async function handleCodeChange(data: { code: string; userID: number }) {
       const block = await codeBlock.findOne({ name: client.blockName }).exec();
       if (block) {
         logger.info(`Expected answer: ${block.answer}`);
+        logger.info(`Received code: ${data.code}`);
+        
         if (block.answer === data.code) {
+          logger.info('Code matches the expected answer');
           broadcastToBlock(client.blockName, {
             event: 'correctAnswer',
             data: { userID: data.userID, code: data.code }
           });
         } 
         else {
+          logger.info('Code does not match the expected answer');
           broadcastToBlock(client.blockName, {
             event: 'codeChange',
             data: { code: data.code }
@@ -128,11 +133,15 @@ async function handleCodeChange(data: { code: string; userID: number }) {
 }
 
 function broadcastToBlock(blockName: string, message: { event: string; data: any }) {
+  logger.info(`Broadcasting message to block ${blockName}: ${JSON.stringify(message)}`);
   clients
     .filter(client => client.blockName === blockName)
     .forEach(client => {
       if (client.ws.readyState === WebSocket.OPEN) {
+        logger.info(`Sending message to user ${client.userID}`);
         client.ws.send(JSON.stringify(message));
+      } else {
+        logger.warn(`WebSocket is not open for user ${client.userID}`);
       }
     });
 }

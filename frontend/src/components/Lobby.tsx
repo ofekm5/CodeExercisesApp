@@ -13,7 +13,8 @@ const Lobby: React.FC = () => {
   useEffect(() => {
     const fetchCodeBlocks = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/codeblocks`);
+        console.log('NEXT_PUBLIC_BACKEND_URL:', process.env.NEXT_PUBLIC_BACKEND_URL);
+        const response = await fetch(`https://terrific-connection-production.up.railway.app/api/codeblocks`);
         const data = await response.json();
         if (response.ok) {
           setCodeBlocks(data.codeblocks.map((block: { name: string }) => block.name));

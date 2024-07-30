@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Container, Typography, Paper, Box } from '@mui/material';
-import { Editor } from '@monaco-editor/react';
+import CodeMirror from '@uiw/react-codemirror';
+import { javascript } from '@codemirror/lang-javascript';
 
 const CodeBlock: React.FC = () => {
   const router = useRouter();
@@ -17,7 +18,7 @@ const CodeBlock: React.FC = () => {
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const socket = new WebSocket(`ws://${process.env.NEXT_PUBLIC_BACKEND_URL}`);
+    const socket = new WebSocket('wss://terrific-connection-production.up.railway.app');
     socketRef.current = socket;
 
     socket.onopen = () => {
@@ -43,12 +44,10 @@ const CodeBlock: React.FC = () => {
           setStudentsCount((prevCount) => prevCount + 1);
           break;
         case 'codeChange':
-          if (correctAnswer) {
-            setCorrectAnswer(false);
-          }
           setCode(message.data.code);
           break;
         case 'correctAnswer':
+          setCode(message.data.code);
           setCorrectAnswer(true);
           break;
         case 'endSession':
@@ -79,13 +78,10 @@ const CodeBlock: React.FC = () => {
     };
   }, [blockName, role, router]);
 
-  const handleCodeChange = (newCode: string | undefined) => {
-    setCode(newCode || '');
-    if (correctAnswer) {
-      setCorrectAnswer(false);
-    }
+  const handleCodeChange = (value: string) => {
+    setCode(value);
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({ event: 'codeChange', data: { blockName, code: newCode, userID } }));
+      socketRef.current.send(JSON.stringify({ event: 'codeChange', data: { blockName, code: value, userID } }));
     }
   };
 
@@ -94,23 +90,20 @@ const CodeBlock: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         {blockName}
       </Typography>
-      {correctAnswer && <Box component="span" fontSize="2rem" role="img" aria-label="smiley">😊</Box>}
       <Paper elevation={3}>
-        <Editor
-          height="600px"
-          defaultLanguage="javascript"
+        <CodeMirror
           value={code}
-          theme="vs-dark"
+          height="600px"
+          extensions={[javascript()]}
           onChange={handleCodeChange}
-          options={{
-            readOnly: role === 'mentor',
-            automaticLayout: true,
-          }}
+          theme="dark"
+          editable={role !== 'mentor'}
         />
       </Paper>
+      {correctAnswer && <Box component="span" fontSize="2rem" role="img" aria-label="smiley">😊</Box>}
       <Box mt={2}>
-        <Typography variant="body1">Role: {role}</Typography>
-        <Typography variant="body1">Students in room: {studentsCount}</Typography>
+        <Typography variant="body1" style={{ color: 'black' }}>Role: {role}</Typography>
+        <Typography variant="body1" style={{ color: 'black' }}>Students in room: {studentsCount}</Typography>
       </Box>
     </Container>
   );
