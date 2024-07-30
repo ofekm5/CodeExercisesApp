@@ -12,7 +12,6 @@ const CodeBlock: React.FC = () => {
   const [code, setCode] = useState<string>('');
   const [role, setRole] = useState<string>('student'); // Default to 'student'
   const [studentsCount, setStudentsCount] = useState<number>(0);
-  const [error, setError] = useState<string | null>(null);
   const [correctAnswer, setCorrectAnswer] = useState<boolean>(false);
   const [userID, setuserID] = useState<number>(0);
   const socketRef = useRef<WebSocket | null>(null);
@@ -36,8 +35,7 @@ const CodeBlock: React.FC = () => {
           setuserID(message.data.userID);
           if (message.data.userID === 1) { // Assuming the first user (userID === 1) is the mentor
             setRole('mentor');
-          }
-          else{
+          } else {
             setStudentsCount((prevCount) => prevCount + 1);
           }
           break;
@@ -45,10 +43,12 @@ const CodeBlock: React.FC = () => {
           setStudentsCount((prevCount) => prevCount + 1);
           break;
         case 'codeChange':
+          if (correctAnswer) {
+            setCorrectAnswer(false);
+          }
           setCode(message.data.code);
           break;
         case 'correctAnswer':
-          setCode(message.data.code);
           setCorrectAnswer(true);
           break;
         case 'endSession':
@@ -56,7 +56,7 @@ const CodeBlock: React.FC = () => {
           router.push('/');
           break;
         case 'error':
-          setError(message.data.message);
+          console.error(message.data.message);
           break;
         default:
           console.error('Unknown event:', message.event);
@@ -65,7 +65,6 @@ const CodeBlock: React.FC = () => {
 
     socket.onerror = (error) => {
       console.error('WebSocket error:', error);
-      setError('WebSocket connection failed');
     };
 
     socket.onclose = (event) => {
@@ -82,6 +81,9 @@ const CodeBlock: React.FC = () => {
 
   const handleCodeChange = (newCode: string | undefined) => {
     setCode(newCode || '');
+    if (correctAnswer) {
+      setCorrectAnswer(false);
+    }
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({ event: 'codeChange', data: { blockName, code: newCode, userID } }));
     }
@@ -92,7 +94,6 @@ const CodeBlock: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         {blockName}
       </Typography>
-      {error && <Box component="span" color="error.main">{error}</Box>}
       {correctAnswer && <Box component="span" fontSize="2rem" role="img" aria-label="smiley">😊</Box>}
       <Paper elevation={3}>
         <Editor

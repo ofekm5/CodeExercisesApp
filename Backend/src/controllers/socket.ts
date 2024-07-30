@@ -52,7 +52,8 @@ function handleEvent(ws: WebSocket, message: { event: string; data: any }) {
 }
 
 function handleJoinBlock(ws: WebSocket, blockName: string) {
-  const userID = clients.length + 1;
+  const blockClients = clients.filter(client => client.blockName === blockName);
+  const userID = blockClients.length + 1;
   const client: Client = { ws, userID, blockName };
 
   clients.push(client);
@@ -68,8 +69,8 @@ function handleJoinBlock(ws: WebSocket, blockName: string) {
       }));
 
       // Notify all other users in the block
-      clients.forEach(c => {
-        if (c.blockName === blockName && c.userID !== userID) {
+      blockClients.forEach(c => {
+        if (c.userID !== userID) {
           c.ws.send(JSON.stringify({
             event: 'anotherUserJoined'
           }));
@@ -89,6 +90,7 @@ function handleJoinBlock(ws: WebSocket, blockName: string) {
     }));
   });
 }
+
 
 function handleLeaveBlock(userID: number) {
   const index = clients.findIndex(client => client.userID === userID);

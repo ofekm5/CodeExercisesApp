@@ -1,8 +1,8 @@
-"use client";  
+"use client";
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Container, Typography, List, ListItem, ListItemText, Paper, CircularProgress, Alert } from '@mui/material';
+import { Container, Typography, List, Card, CardActionArea, CardContent, CircularProgress, Alert, Paper, Box } from '@mui/material';
 
 const Lobby: React.FC = () => {
   const router = useRouter();
@@ -13,7 +13,7 @@ const Lobby: React.FC = () => {
   useEffect(() => {
     const fetchCodeBlocks = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/codeblocks'); 
+        const response = await fetch('http://localhost:5000/api/codeblocks');
         const data = await response.json();
         if (response.ok) {
           setCodeBlocks(data.codeblocks.map((block: { name: string }) => block.name));
@@ -31,35 +31,47 @@ const Lobby: React.FC = () => {
   }, []);
 
   const handleSelectBlock = (blockName: string) => {
-    router.push(`/codeblock/${blockName}`); 
+    router.push(`/codeblock/${blockName}`);
   };
 
   if (loading) {
-    return <CircularProgress />;
+    return (
+      <Box className="container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress style={{ color: 'white' }} />
+      </Box>
+    );
   }
 
   if (error) {
-    return <Alert severity="error">{error}</Alert>;
+    return (
+      <Box className="container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
   }
 
   return (
-    <Container>
-      <Typography variant="h3" gutterBottom>
+    <Box className="container">
+      <Typography variant="h3" gutterBottom align="center">
         Tom JS Exercises
       </Typography>
-      <Typography variant="h5" gutterBottom>
+      <Typography variant="h5" gutterBottom align="center">
         Choose code block:
       </Typography>
-      <Paper>
+      <Paper className="paper">
         <List>
           {codeBlocks.map((block) => (
-            <ListItem button key={block} onClick={() => handleSelectBlock(block)}>
-              <ListItemText primary={block} />
-            </ListItem>
+            <Card key={block} style={{ marginBottom: '10px' }}>
+              <CardActionArea onClick={() => handleSelectBlock(block)}>
+                <CardContent>
+                  <Typography variant="h6">{block}</Typography>
+                </CardContent>
+              </CardActionArea>
+            </Card>
           ))}
         </List>
       </Paper>
-    </Container>
+    </Box>
   );
 };
 
