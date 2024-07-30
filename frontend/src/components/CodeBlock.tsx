@@ -1,69 +1,90 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import io from 'socket.io-client';
-import MonacoEditor, { ReactMonacoEditorProps } from 'react-monaco-editor';
-import { Container, Typography, Paper, Box, Alert } from '@mui/material';
+"use client";
 
-const socket = io('http://localhost:5000');
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { Container, Typography, Paper, Box } from '@mui/material';
+import { Editor } from '@monaco-editor/react';
 
 const CodeBlock: React.FC = () => {
   const router = useRouter();
   const params = useParams();
-  const blockName = params.blockName as string; // Ensure blockName is treated as a string
+  const blockName = decodeURIComponent(params.blockName as string); // Ensure blockName is decoded
   const [code, setCode] = useState<string>('');
-  const [role, setRole] = useState<string>('');
+  const [role, setRole] = useState<string>('student'); // Default to 'student'
   const [studentsCount, setStudentsCount] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [correctAnswer, setCorrectAnswer] = useState<boolean>(false);
+  const [userID, setuserID] = useState<number>(0);
+  const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const userRole = prompt("Enter your role (mentor/student)");
-    setRole(userRole || '');
-    socket.emit('joinBlock', { blockName, role: userRole });
+    const socket = new WebSocket('ws://localhost:5000');
+    socketRef.current = socket;
 
-    socket.on('joinedBlock', ({ code, userID }) => {
-      setCode(code);
-    });
+    socket.onopen = () => {
+      console.log('WebSocket connection established');
+      socket.send(JSON.stringify({ event: 'joinBlock', data: blockName }));
+    };
 
-    socket.on('codeChange', ({ code }) => setCode(code));
+    socket.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      console.log('Received message:', message);
 
-    socket.on('updateUsers', ({ mentor, students }) => {
-      setStudentsCount(students.length);
-    });
-
-    socket.on('mentorLeft', () => {
-      if (role === 'student') {
-        alert('Mentor left, redirecting to lobby.');
-        router.push('/');
+      switch (message.event) {
+        case 'joinedBlock':
+          setCode(message.data.code);
+          setuserID(message.data.userID);
+          if (message.data.userID === 1) { // Assuming the first user (userID === 1) is the mentor
+            setRole('mentor');
+          }
+          else{
+            setStudentsCount((prevCount) => prevCount + 1);
+          }
+          break;
+        case 'anotherUserJoined':
+          setStudentsCount((prevCount) => prevCount + 1);
+          break;
+        case 'codeChange':
+          setCode(message.data.code);
+          break;
+        case 'correctAnswer':
+          setCode(message.data.code);
+          setCorrectAnswer(true);
+          break;
+        case 'endSession':
+          alert('The session has ended. Redirecting to lobby.');
+          router.push('/');
+          break;
+        case 'error':
+          setError(message.data.message);
+          break;
+        default:
+          console.error('Unknown event:', message.event);
       }
-    });
+    };
 
-    socket.on('correctAnswer', () => {
-      setCorrectAnswer(true);
-    });
+    socket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setError('WebSocket connection failed');
+    };
 
-    socket.on('endSession', () => {
-      alert('The session has ended. Redirecting to lobby.');
-      router.push('/');
-    });
-
-    socket.on('error', ({ message }) => {
-      setError(message);
-    });
+    socket.onclose = (event) => {
+      console.log('WebSocket connection closed', event);
+    };
 
     return () => {
-      socket.disconnect();
+      if (socketRef.current) {
+        socketRef.current.close();
+        socketRef.current = null;
+      }
     };
   }, [blockName, role, router]);
 
-  const handleCodeChange = (newCode: string) => {
-    setCode(newCode);
-    socket.emit('codeChange', { blockName, code: newCode });
-  };
-
-  const options: ReactMonacoEditorProps['options'] = {
-    readOnly: role === 'mentor',
-    automaticLayout: true,
+  const handleCodeChange = (newCode: string | undefined) => {
+    setCode(newCode || '');
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({ event: 'codeChange', data: { blockName, code: newCode, userID } }));
+    }
   };
 
   return (
@@ -71,17 +92,19 @@ const CodeBlock: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         {blockName}
       </Typography>
-      {error && <Alert severity="error">{error}</Alert>}
-      {correctAnswer && <Alert severity="success">Correct Answer!</Alert>}
+      {error && <Box component="span" color="error.main">{error}</Box>}
+      {correctAnswer && <Box component="span" fontSize="2rem" role="img" aria-label="smiley">😊</Box>}
       <Paper elevation={3}>
-        <MonacoEditor
-          width="100%"
-          height="600"
-          language="javascript"
-          theme="vs-dark"
+        <Editor
+          height="600px"
+          defaultLanguage="javascript"
           value={code}
-          options={options}
+          theme="vs-dark"
           onChange={handleCodeChange}
+          options={{
+            readOnly: role === 'mentor',
+            automaticLayout: true,
+          }}
         />
       </Paper>
       <Box mt={2}>

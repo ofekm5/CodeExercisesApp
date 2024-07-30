@@ -5,12 +5,20 @@ import logger from './logger';
 import { createServer } from 'http';
 import initSocket from './controllers/socket';
 import initMongoDB from './models/initMongoDB';
+import cors from 'cors';
+
 
 const app: Application = express();
 const server = createServer(app);
 const PORT: number = parseInt(process.env.PORT || '5000', 10);
 const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/mydb';
 
+app.use(cors({
+  origin: 'http://localhost:3000', 
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type'],
+  credentials: true,
+}));
 app.use(bodyParser.json());
 app.use('/api', router);
 

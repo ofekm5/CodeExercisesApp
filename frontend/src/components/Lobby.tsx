@@ -1,3 +1,5 @@
+"use client";  
+
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Container, Typography, List, ListItem, ListItemText, Paper, CircularProgress, Alert } from '@mui/material';
@@ -11,7 +13,7 @@ const Lobby: React.FC = () => {
   useEffect(() => {
     const fetchCodeBlocks = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/codeblocks');
+        const response = await fetch('http://localhost:5000/api/codeblocks'); 
         const data = await response.json();
         if (response.ok) {
           setCodeBlocks(data.codeblocks.map((block: { name: string }) => block.name));
@@ -29,7 +31,7 @@ const Lobby: React.FC = () => {
   }, []);
 
   const handleSelectBlock = (blockName: string) => {
-    router.push(`/api/codeblock/${blockName}`);
+    router.push(`/codeblock/${blockName}`); 
   };
 
   if (loading) {
@@ -43,7 +45,10 @@ const Lobby: React.FC = () => {
   return (
     <Container>
       <Typography variant="h3" gutterBottom>
-        Choose code block
+        Tom JS Exercises
+      </Typography>
+      <Typography variant="h5" gutterBottom>
+        Choose code block:
       </Typography>
       <Paper>
         <List>

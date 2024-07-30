@@ -54,22 +54,39 @@ function handleEvent(ws: WebSocket, message: { event: string; data: any }) {
 function handleJoinBlock(ws: WebSocket, blockName: string) {
   const userID = clients.length + 1;
   const client: Client = { ws, userID, blockName };
-  
+
   clients.push(client);
 
   codeBlock.findOne({ name: blockName }).then((block) => {
     if (block) {
       logger.info(`User ${userID} joined block ${blockName}`);
+
+      // Notify the joining user
       ws.send(JSON.stringify({
         event: 'joinedBlock',
         data: { code: block.code, userID }
       }));
+
+      // Notify all other users in the block
+      clients.forEach(c => {
+        if (c.blockName === blockName && c.userID !== userID) {
+          c.ws.send(JSON.stringify({
+            event: 'anotherUserJoined'
+          }));
+        }
+      });
     } else {
       ws.send(JSON.stringify({
         event: 'error',
         data: { message: 'Block not found' }
       }));
     }
+  }).catch(error => {
+    logger.error(`Error finding block: ${error.message}`);
+    ws.send(JSON.stringify({
+      event: 'error',
+      data: { message: 'Internal Server Error' }
+    }));
   });
 }
 
@@ -90,9 +107,10 @@ async function handleCodeChange(data: { code: string; userID: number }) {
         if (block.answer === data.code) {
           broadcastToBlock(client.blockName, {
             event: 'correctAnswer',
-            data: { userID: data.userID }
+            data: { userID: data.userID, code: data.code }
           });
-        } else {
+        } 
+        else {
           broadcastToBlock(client.blockName, {
             event: 'codeChange',
             data: { code: data.code }
